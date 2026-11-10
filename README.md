@@ -8,7 +8,7 @@
 - Сетка приложений с поиском по названию; стрелки ходят по сетке, Enter запускает, Esc закрывает.
 - Закреплённые приложения отдельным блоком сверху.
 - Правый клик по приложению: «Закрепить сверху / Открепить», «Показать в Finder», «Скрыть из списка».
-- Открытие кликом по иконке в Dock или хоткеем (Option+A через [skhd](https://github.com/koekeishiya/skhd)); повторное действие скрывает окно.
+- Открытие кликом по иконке в Dock или хоткеем (Option+A); повторное действие скрывает окно.
 - Процесс живёт постоянно, окно прячется; пока оно скрыто, интерфейс выгружен и процессор почти не используется.
 
 ## История буфера обмена
@@ -31,20 +31,22 @@
 Скрипт собирает `~/Applications/Apps.app`, рисует иконку (`icon.swift`), подписывает ad-hoc и регистрирует схему `apps-launcher://`.
 После сборки перетащите `Apps.app` в Dock.
 
-## Хоткей
+## Хоткеи
 
-```sh
-brew install koekeishiya/formulae/skhd
-cp examples/skhdrc ~/.config/skhd/skhdrc
-skhd --start-service
+Глобальные сочетания приложение регистрирует само (Carbon `RegisterEventHotKey`): сторонние программы и разрешение Accessibility не нужны.
+Настройка — `~/.config/apps-folder/hotkeys.txt`, файл создаётся при первом запуске:
+
+```
+apps = alt+a
+clipboard = cmd+space
 ```
 
-`skhd` нужно разрешение в System Settings → Privacy & Security → Accessibility.
-Хоткеи открывают `apps-launcher://toggle` (приложения) и `apps-launcher://clipboard` (буфер); автоповтор удерживаемой клавиши игнорируется.
+Модификаторы: `cmd`, `alt`, `ctrl`, `shift`; клавиши: буквы, цифры, `space`, `tab`, `return`, `f1`–`f12`. Изменения применяются после перезапуска приложения.
+Хоткеи работают, только пока процесс запущен (см. «Автозапуск»). Для скриптов оставлена схема `open apps-launcher://toggle` и `open apps-launcher://clipboard`.
 
 ## Автозапуск
 
-История буфера пишется, только пока процесс запущен. Чтобы он стартовал при входе скрытым:
+История буфера пишется и хоткеи работают, только пока процесс запущен. Чтобы он стартовал при входе скрытым:
 
 ```sh
 cp examples/local.dockgrid.plist ~/Library/LaunchAgents/
@@ -60,12 +62,13 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.dockgrid.plist
 | `pinned.txt` | закреплённые сверху, в порядке строк |
 | `system.txt` | какие приложения из `/System/Applications` показывать (остальные системные скрыты) |
 | `hidden.txt` | какие сторонние приложения скрыть |
+| `hotkeys.txt` | глобальные сочетания клавиш |
 
 Примеры — в `examples/`. Источники списка: `/Applications`, `~/Applications` (с подпапками первого уровня), `/System/Applications` и `Utilities`.
 
 ## Устройство
 
-- `main.swift` — окно-панель, режимы и переключение; `Launcher.swift` — сетка приложений; `Clipboard.swift` — история буфера (опрос `NSPasteboard.changeCount` раз в 0,5 с).
+- `main.swift` — окно-панель, режимы и переключение; `Launcher.swift` — сетка приложений; `Clipboard.swift` — история буфера (опрос `NSPasteboard.changeCount` раз в 0,5 с); `Hotkeys.swift` — глобальные хоткеи.
 - Окно — `NSPanel` со стилем `nonactivatingPanel`: получает клавиатуру, не дожидаясь активации приложения.
-- Клик в Dock приходит как событие reopen, хоткей — как открытие URL; оба ведут в один `toggle()`.
+- Клик в Dock приходит как событие reopen, хоткей — как событие Carbon; оба ведут в один `toggle()`.
 - `tools/winvis.swift` — проверка, видно ли окно на экране (для тестов из терминала).

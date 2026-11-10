@@ -1,0 +1,2 @@
+apps = alt+a
+clipboard = cmd+space

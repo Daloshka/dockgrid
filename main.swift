@@ -1,7 +1,8 @@
 // DockGrid — лаунчер приложений и история буфера обмена в одном окне-панели.
 // Процесс живёт постоянно, окно прячется; пока оно скрыто, интерфейс выгружен.
-//   клик в Dock / apps-launcher://toggle   — сетка приложений
-//   apps-launcher://clipboard               — история буфера обмена
+//   клик в Dock, хоткей apps (Option+A)        — сетка приложений
+//   хоткей clipboard (Cmd+Space)                — история буфера обмена
+// Хоткеи глобальные, см. Hotkeys.swift; схема apps-launcher:// оставлена для скриптов.
 import AppKit
 import SwiftUI
 
@@ -45,6 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.delegate = self
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] e in self?.handleKey(e) ?? e }
         ClipStore.shared.start()
+        HotKeys.setUp { [weak self] mode in self?.toggle(mode) }
     }
 
     private func handleKey(_ e: NSEvent) -> NSEvent? {
@@ -145,7 +147,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         return false
     }
 
-    // Хоткеи: сигналы чаще 0,5 с — автоповтор удерживаемой клавиши, их пропускаем.
+    // Вызов из скриптов (open apps-launcher://…). Сигналы чаще 0,5 с пропускаем.
     func application(_ application: NSApplication, open urls: [URL]) {
         let target: Mode = urls.first?.host == "clipboard" ? .clipboard : .apps
         let gap = Date().timeIntervalSince(lastHotkey[target] ?? .distantPast)
