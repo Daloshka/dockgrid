@@ -1,2 +1,4 @@
-# Option+A — показать/скрыть лаунчер Apps
+# Option+A — сетка приложений DockGrid
 alt - a : open -g "apps-launcher://toggle"
+# Cmd+Space — история буфера обмена DockGrid
+cmd - space : open -g "apps-launcher://clipboard"

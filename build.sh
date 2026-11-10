@@ -4,7 +4,7 @@ set -e
 cd "${0:A:h}"
 APP="$HOME/Applications/Apps.app"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" build/AppIcon.iconset
-swiftc -O -target arm64-apple-macos14 main.swift -o "$APP/Contents/MacOS/Apps"
+swiftc -O -target arm64-apple-macos14 main.swift Launcher.swift Clipboard.swift -o "$APP/Contents/MacOS/Apps"
 swiftc icon.swift -o build/mkicon && build/mkicon build/AppIcon.iconset
 iconutil -c icns build/AppIcon.iconset -o "$APP/Contents/Resources/AppIcon.icns"
 cat > "$APP/Contents/Info.plist" <<PLIST
