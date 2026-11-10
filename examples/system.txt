@@ -1,0 +1,19 @@
+System Settings
+Terminal
+Activity Monitor
+Calculator
+Calendar
+Notes
+Mail
+Messages
+Passwords
+Photos
+Preview
+App Store
+Music
+Reminders
+FaceTime
+TextEdit
+Disk Utility
+QuickTime Player
+Screenshot

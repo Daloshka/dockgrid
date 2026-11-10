@@ -1,0 +1,3 @@
+Claude Code URL Handler
+Microsoft Defender Shim
+Jcode Notifications

@@ -1,0 +1,2 @@
+# Option+A — показать/скрыть лаунчер Apps
+alt - a : open -g "apps-launcher://toggle"
