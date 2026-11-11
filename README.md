@@ -74,7 +74,7 @@ Hotkeys tile the focused window of any app — modelled on [Rectangle](https://g
 | `restore` | Ctrl+Option+Backspace | bring back the frame the window had before tiling |
 | `next-display`, `prev-display` | Ctrl+Option+Cmd+→ / ← | move to the adjacent display, keeping proportions |
 
-- Needs the Accessibility permission for `Apps.app` (System Settings → Privacy & Security → Accessibility): the prompt appears on the first shortcut press; it has to be granted again after a rebuild.
+- Needs the Accessibility permission for `Apps.app` (System Settings → Privacy & Security → Accessibility): the prompt appears on the first shortcut press. After an update or a rebuild it has to be granted again: the app removes the stale entry on launch, so you only need to flip the toggle in the new prompt.
 - Shortcuts are changed in the settings window or in `hotkeys.txt` (see "Hotkeys"); `action = none` disables an action.
 - `restore` works while the window still sits where DockGrid put it; full-screen windows are left alone.
 - Rectangle is quit during installation so shortcuts do not fire twice; turn off any other window manager with the same shortcuts yourself.

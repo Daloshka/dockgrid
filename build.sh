@@ -6,7 +6,7 @@ cd "${0:A:h}"
 # DOCKGRID_PACKAGE=1 — только собрать, ничего не регистрировать и не отключать (см. release.sh).
 APP="${DOCKGRID_APP:-$HOME/Applications/Apps.app}"
 # Версия приложения; release.sh выпускает релиз с тегом v$VERSION.
-VERSION="${DOCKGRID_VERSION:-1.1.0}"
+VERSION="${DOCKGRID_VERSION:-1.1.1}"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" build/AppIcon.iconset
 slices=()
 for arch in ${=DOCKGRID_ARCHS:-arm64}; do

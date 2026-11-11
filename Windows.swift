@@ -82,6 +82,20 @@ enum WindowManager {
     }
     private static var records: [Record] = []
 
+    /// Подпись ad-hoc: после обновления или пересборки старое разрешение в «Универсальном доступе»
+    /// остаётся включённым в списке, но к новому бинарнику не относится. Если доступа нет, стираем
+    /// такую запись при запуске, чтобы следующий запрос создал рабочую. Действующее разрешение не трогаем.
+    static func resetStaleGrant() {
+        guard !AXIsProcessTrusted(), let id = Bundle.main.bundleIdentifier else { return }
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/usr/bin/tccutil")
+        p.arguments = ["reset", "Accessibility", id]
+        p.standardOutput = FileHandle.nullDevice
+        p.standardError = FileHandle.nullDevice
+        do { try p.run(); NSLog("DockGrid: устаревшее разрешение «Универсальный доступ» сброшено") }
+        catch { NSLog("DockGrid: не удалось сбросить разрешение: %@", error.localizedDescription) }
+    }
+
     static func perform(_ action: WindowAction) {
         let prompt = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
         guard AXIsProcessTrustedWithOptions(prompt) else {

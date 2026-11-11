@@ -48,6 +48,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.delegate = self
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] e in self?.handleKey(e) ?? e }
         ClipStore.shared.start()
+        WindowManager.resetStaleGrant()
         HotKeys.setUp { [weak self] mode in self?.toggle(mode) }
     }
 
