@@ -233,6 +233,16 @@ final class ClipModel: ObservableObject {
     var onClose: ((_ restoreFocus: Bool) -> Void)?
     let store = ClipStore.shared
     private var thumbs: [String: NSImage] = [:]
+    private var codeCache: (id: String, text: AttributedString?)?
+
+    /// Подсвеченный текст записи, если она похожа на код; иначе nil. Хранится только для последней записи.
+    func code(_ item: ClipItem) -> AttributedString? {
+        if let hit = codeCache, hit.id == item.id { return hit.text }
+        let text = String((item.text ?? "").prefix(20_000))
+        let result = Code.looksLikeCode(text) ? Code.highlight(text) : nil
+        codeCache = (item.id, result)
+        return result
+    }
 
     var visible: [ClipItem] {
         let q = query.trimmingCharacters(in: .whitespaces)
@@ -350,10 +360,20 @@ struct ClipPreview: View {
             Group {
                 switch item.kind {
                 case .text:
-                    ScrollView {
-                        Text(String((item.text ?? "").prefix(20_000)))
-                            .font(.system(size: 12, design: .monospaced))
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                    if let code = model.code(item) {
+                        // Код не переносим по ширине: длинные строки прокручиваются вбок.
+                        ScrollView([.vertical, .horizontal]) {
+                            Text(code).font(.system(size: 12, design: .monospaced))
+                                .fixedSize(horizontal: true, vertical: true)
+                        }
+                        .defaultScrollAnchor(.topLeading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        ScrollView {
+                            Text(String((item.text ?? "").prefix(20_000)))
+                                .font(.system(size: 12, design: .monospaced))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                     }
                 case .files:
                     ScrollView {
@@ -378,7 +398,7 @@ struct ClipPreview: View {
             VStack(alignment: .leading, spacing: 3) {
                 if let app = item.app { Text("Приложение: \(app)") }
                 if item.kind == .image { Text("Размер: \(item.width ?? 0)×\(item.height ?? 0)") }
-                if item.kind == .text { Text("Символов: \((item.text ?? "").count)") }
+                if item.kind == .text { Text("Символов: \((item.text ?? "").count)" + (model.code(item) == nil ? "" : " · код")) }
                 Text("Первое копирование: \(item.firstDate.formatted(date: .abbreviated, time: .shortened))")
                 Text("Последнее: \(item.date.formatted(date: .abbreviated, time: .shortened))")
                 Text("Копирований: \(item.count)")
