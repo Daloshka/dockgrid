@@ -67,8 +67,9 @@ cat <<'DONE'
 DockGrid установлен и запущен.
   Option+A   — сетка приложений
   Cmd+Space  — история буфера обмена
+  Ctrl+Option+стрелки, Enter, U/I/J/K… — раскладка окон (как в Rectangle)
 Сочетания меняются в ~/.config/apps-folder/hotkeys.txt.
 Чтобы открывать кликом, перетащите ~/Applications/Apps.app в Dock.
-Для вставки по Option+Enter выдайте Apps.app разрешение в «Системные настройки → Конфиденциальность → Универсальный доступ».
+Для управления окнами и вставки по Option+Enter выдайте Apps.app разрешение в «Системные настройки → Конфиденциальность → Универсальный доступ».
 Удалить: launchctl bootout gui/$(id -u)/local.dockgrid; rm -rf ~/Applications/Apps.app ~/Library/LaunchAgents/local.dockgrid.plist
 DONE

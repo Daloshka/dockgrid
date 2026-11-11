@@ -2,6 +2,7 @@
 // и сторонних программ. Настройка — ~/.config/apps-folder/hotkeys.txt, строки вида
 //   apps = alt+a
 //   clipboard = cmd+space
+//   left-half = ctrl+alt+left      (управление окнами, см. Windows.swift)
 import AppKit
 import Carbon.HIToolbox
 
@@ -15,6 +16,8 @@ enum HotKeys {
         "w": 13, "e": 14, "r": 15, "y": 16, "t": 17, "1": 18, "2": 19, "3": 20, "4": 21, "6": 22, "5": 23,
         "9": 25, "7": 26, "8": 28, "0": 29, "o": 31, "u": 32, "i": 34, "p": 35, "l": 37, "j": 38, "k": 40,
         "n": 45, "m": 46, "space": 49, "tab": 48, "return": 36, "enter": 36, "`": 50,
+        "left": 123, "right": 124, "down": 125, "up": 126, "delete": 51, "backspace": 51,
+        "=": 24, "equal": 24, "-": 27, "minus": 27, "[": 33, "]": 30, ",": 43, ".": 47, "/": 44,
         "f1": 122, "f2": 120, "f3": 99, "f4": 118, "f5": 96, "f6": 97, "f7": 98, "f8": 100, "f9": 101,
         "f10": 109, "f11": 103, "f12": 111,
     ]
@@ -22,7 +25,9 @@ enum HotKeys {
         "cmd": cmdKey, "command": cmdKey, "alt": optionKey, "opt": optionKey, "option": optionKey,
         "ctrl": controlKey, "control": controlKey, "shift": shiftKey,
     ]
-    static let defaults = ["apps = alt+a", "clipboard = cmd+space"]
+    /// Действие → сочетание по умолчанию; "none" — действие есть, но без сочетания.
+    static let defaults: [(String, String)] = [("apps", "alt+a"), ("clipboard", "cmd+space")]
+        + WindowAction.allCases.map { ($0.rawValue, $0.defaultKey) }
 
     /// "alt+a" → (keyCode, modifiers); nil, если сочетание не разобрано.
     static func parse(_ combo: String) -> (UInt32, UInt32)? {
@@ -37,10 +42,21 @@ enum HotKeys {
         return (key, UInt32(mods))
     }
 
-    /// Читает hotkeys.txt (создаёт с умолчаниями, если файла нет) и регистрирует сочетания.
+    /// Дописывает в hotkeys.txt действия, которых там ещё нет (новый файл или обновление версии),
+    /// и регистрирует сочетания. Отключить действие — написать `действие = none`.
     static func setUp(_ handler: @escaping (Mode) -> Void) {
-        if !FileManager.default.fileExists(atPath: Conf.dir.appendingPathComponent("hotkeys.txt").path) {
-            Conf.write("hotkeys.txt", defaults)
+        let known = Set(Conf.read("hotkeys.txt").compactMap {
+            $0.split(separator: "=", maxSplits: 1).first?.trimmingCharacters(in: .whitespaces).lowercased()
+        })
+        let missing = defaults.filter { !known.contains($0.0) }.map { "\($0.0) = \($0.1)" }
+        if !missing.isEmpty {
+            let url = Conf.dir.appendingPathComponent("hotkeys.txt")
+            let old = (try? String(contentsOf: url, encoding: .utf8)) ?? ""
+            var lines = old.isEmpty ? [] : [old.hasSuffix("\n") ? String(old.dropLast()) : old]
+            if missing.contains(where: { $0.hasPrefix("left-half") }) {
+                lines.append("# Управление окнами (как в Rectangle); отключить действие: = none")
+            }
+            Conf.write("hotkeys.txt", lines + missing)
         }
         if !installed {
             installed = true
@@ -60,12 +76,13 @@ enum HotKeys {
         for line in Conf.read("hotkeys.txt") {
             let pair = line.split(separator: "=", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
             guard pair.count == 2 else { continue }
-            let mode: Mode
-            switch pair[0].lowercased() {
-            case "apps": mode = .apps
-            case "clipboard": mode = .clipboard
-            default: NSLog("DockGrid: неизвестное действие в hotkeys.txt: %@", pair[0]); continue
-            }
+            let name = pair[0].lowercased()
+            let action: () -> Void
+            if name == "apps" { action = { handler(.apps) } }
+            else if name == "clipboard" { action = { handler(.clipboard) } }
+            else if let w = WindowAction(rawValue: name) { action = { WindowManager.perform(w) } }
+            else { NSLog("DockGrid: неизвестное действие в hotkeys.txt: %@", pair[0]); continue }
+            if ["none", "off", "-"].contains(pair[1].lowercased()) { continue }
             guard let (key, mods) = parse(pair[1]) else {
                 NSLog("DockGrid: не разобрано сочетание: %@", pair[1]); continue
             }
@@ -74,7 +91,7 @@ enum HotKeys {
                                              GetApplicationEventTarget(), 0, &ref)
             if status == noErr, let ref {
                 refs.append(ref)
-                actions[nextID] = { handler(mode) }
+                actions[nextID] = action
                 NSLog("DockGrid: хоткей %@ = %@ зарегистрирован", pair[0], pair[1])
             } else {
                 NSLog("DockGrid: хоткей %@ = %@ не зарегистрирован, код %d", pair[0], pair[1], status)

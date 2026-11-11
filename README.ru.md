@@ -2,7 +2,7 @@
 
 [English](README.md) · **Русский**
 
-Лёгкий лаунчер приложений и история буфера обмена для macOS — замена Launchpad / системной иконки «Apps» и менеджера буфера для тех, у кого выключен Spotlight.
+Лёгкий лаунчер приложений, история буфера обмена и управление окнами для macOS — замена Launchpad / системной иконки «Apps» и менеджера буфера для тех, у кого выключен Spotlight.
 Не использует индекс Spotlight: список приложений читается с диска при каждом открытии.
 
 ![Сетка приложений, поиск и история буфера обмена](docs/demo.gif)
@@ -52,6 +52,30 @@ rm -rf ~/Applications/Apps.app ~/Library/LaunchAgents/local.dockgrid.plist
 - Ввод через IME (японский, китайский, корейский): Enter и стрелки в окне всегда выбирают запись, поэтому подтверждение набора в поле поиска не работает.
 - Вставка по Option+Enter посылает клавишу V по её положению на QWERTY; на раскладках вроде Dvorak вставка не сработает.
 
+## Управление окнами
+
+Хоткеи раскладывают активное окно любого приложения — по образцу [Rectangle](https://github.com/rxhanson/rectangle), с теми же сочетаниями по умолчанию:
+
+| Действие | Сочетание | Что делает |
+| --- | --- | --- |
+| `left-half`, `right-half` | Ctrl+Option+← / → | левая / правая половина; повтор перебирает ширину 1/2 → 2/3 → 1/3 |
+| `top-half`, `bottom-half` | Ctrl+Option+↑ / ↓ | верхняя / нижняя половина |
+| `top-left`, `top-right`, `bottom-left`, `bottom-right` | Ctrl+Option+U / I / J / K | четверти экрана |
+| `first-third`, `center-third`, `last-third` | Ctrl+Option+D / F / G | трети (на вертикальном мониторе — по высоте) |
+| `first-two-thirds`, `last-two-thirds` | Ctrl+Option+E / T | две трети |
+| `maximize` | Ctrl+Option+Enter | на всю рабочую область (не полноэкранный режим) |
+| `maximize-height` | Ctrl+Option+Shift+↑ | на всю высоту, ширина не меняется |
+| `almost-maximize` | не назначено | 90 % экрана по центру |
+| `center` | Ctrl+Option+C | по центру без изменения размера |
+| `larger`, `smaller` | Ctrl+Option+= / − | увеличить / уменьшить на 30 pt с каждой стороны |
+| `restore` | Ctrl+Option+Backspace | вернуть рамку, которая была до раскладки |
+| `next-display`, `prev-display` | Ctrl+Option+Cmd+→ / ← | на соседний монитор с сохранением пропорций |
+
+- Нужно разрешение Accessibility для `Apps.app` («Системные настройки → Конфиденциальность и безопасность → Универсальный доступ»): запрос появится при первом нажатии; после пересборки разрешение выдают заново.
+- Сочетания меняются в `hotkeys.txt` (см. «Хоткеи»); `действие = none` отключает действие.
+- `restore` работает, пока окно стоит там, куда его поставил DockGrid; окна в полноэкранном режиме не трогаются.
+- Если запущен сам Rectangle (или другой менеджер окон с теми же сочетаниями), сработают оба — оставьте один.
+
 ## Сборка из исходников
 
 Нужны Xcode Command Line Tools (`swiftc`, `iconutil`), macOS 14+.
@@ -75,15 +99,17 @@ rm -rf ~/Applications/Apps.app ~/Library/LaunchAgents/local.dockgrid.plist
 
 ## Хоткеи
 
-Глобальные сочетания приложение регистрирует само (Carbon `RegisterEventHotKey`): сторонние программы и разрешение Accessibility не нужны.
-Настройка — `~/.config/apps-folder/hotkeys.txt`, файл создаётся при первом запуске:
+Глобальные сочетания приложение регистрирует само (Carbon `RegisterEventHotKey`): сторонние программы не нужны, а разрешение Accessibility требуется только для управления окнами и вставки по Option+Enter.
+Настройка — `~/.config/apps-folder/hotkeys.txt`; файл создаётся при первом запуске, а действия, которых в нём ещё нет (например, после обновления), дописываются в конец:
 
 ```
 apps = alt+a
 clipboard = cmd+space
+left-half = ctrl+alt+left
+…
 ```
 
-Модификаторы: `cmd`, `alt`, `ctrl`, `shift`; клавиши: буквы, цифры, `space`, `tab`, `return`, `f1`–`f12`. Изменения применяются после перезапуска приложения.
+Модификаторы: `cmd`, `alt`, `ctrl`, `shift`; клавиши: буквы, цифры, `space`, `tab`, `return`, `delete`, стрелки `left`/`right`/`up`/`down`, `=`, `-`, `[`, `]`, `,`, `.`, `/`, `f1`–`f12`. Значение `none` оставляет действие без сочетания. Изменения применяются после перезапуска приложения.
 Хоткеи работают, только пока процесс запущен (см. «Автозапуск»). Для скриптов оставлена схема `open apps-launcher://toggle` и `open apps-launcher://clipboard`.
 
 ## Автозапуск
@@ -110,7 +136,7 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.dockgrid.plist
 
 ## Устройство
 
-- `main.swift` — окно-панель, режимы и переключение; `Launcher.swift` — сетка приложений; `Clipboard.swift` — история буфера (опрос `NSPasteboard.changeCount` раз в 0,5 с); `Highlight.swift` — распознавание и подсветка кода; `QRCode.swift` — чтение QR-кодов с картинок; `Hotkeys.swift` — глобальные хоткеи.
+- `main.swift` — окно-панель, режимы и переключение; `Launcher.swift` — сетка приложений; `Clipboard.swift` — история буфера (опрос `NSPasteboard.changeCount` раз в 0,5 с); `Highlight.swift` — распознавание и подсветка кода; `QRCode.swift` — чтение QR-кодов с картинок; `Hotkeys.swift` — глобальные хоткеи; `Windows.swift` — управление окнами через Accessibility API.
 - Окно — `NSPanel` со стилем `nonactivatingPanel`: получает клавиатуру, не дожидаясь активации приложения.
 - Клик в Dock приходит как событие reopen, хоткей — как событие Carbon; оба ведут в один `toggle()`.
 - `tools/winvis.swift` — проверка, видно ли окно на экране (для тестов из терминала).

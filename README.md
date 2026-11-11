@@ -2,7 +2,7 @@
 
 **English** · [Русский](README.ru.md)
 
-A lightweight app launcher and clipboard history for macOS — a replacement for Launchpad / the system "Apps" icon and for a clipboard manager, made for people who keep Spotlight turned off.
+A lightweight app launcher, clipboard history and window manager for macOS — a replacement for Launchpad / the system "Apps" icon and for a clipboard manager, made for people who keep Spotlight turned off.
 It does not use the Spotlight index: the app list is read from disk every time the window opens.
 
 > The app interface and the installer messages are currently in Russian.
@@ -54,6 +54,30 @@ rm -rf ~/Applications/Apps.app ~/Library/LaunchAgents/local.dockgrid.plist
 - IME input (Japanese, Chinese, Korean): Enter and the arrow keys always act on the list, so confirming a composition in the search field does not work.
 - Option+Enter pastes by sending the V key at its QWERTY position; on layouts such as Dvorak the paste will not work.
 
+## Window management
+
+Hotkeys tile the focused window of any app — modelled on [Rectangle](https://github.com/rxhanson/rectangle), with the same default shortcuts:
+
+| Action | Shortcut | What it does |
+| --- | --- | --- |
+| `left-half`, `right-half` | Ctrl+Option+← / → | left / right half; repeating cycles the width 1/2 → 2/3 → 1/3 |
+| `top-half`, `bottom-half` | Ctrl+Option+↑ / ↓ | top / bottom half |
+| `top-left`, `top-right`, `bottom-left`, `bottom-right` | Ctrl+Option+U / I / J / K | screen quarters |
+| `first-third`, `center-third`, `last-third` | Ctrl+Option+D / F / G | thirds (split by height on a portrait display) |
+| `first-two-thirds`, `last-two-thirds` | Ctrl+Option+E / T | two thirds |
+| `maximize` | Ctrl+Option+Enter | fill the usable area (not full-screen mode) |
+| `maximize-height` | Ctrl+Option+Shift+↑ | full height, width unchanged |
+| `almost-maximize` | unassigned | 90% of the screen, centred |
+| `center` | Ctrl+Option+C | centre without resizing |
+| `larger`, `smaller` | Ctrl+Option+= / − | grow / shrink by 30 pt on each side |
+| `restore` | Ctrl+Option+Backspace | bring back the frame the window had before tiling |
+| `next-display`, `prev-display` | Ctrl+Option+Cmd+→ / ← | move to the adjacent display, keeping proportions |
+
+- Needs the Accessibility permission for `Apps.app` (System Settings → Privacy & Security → Accessibility): the prompt appears on the first shortcut press; it has to be granted again after a rebuild.
+- Shortcuts are changed in `hotkeys.txt` (see "Hotkeys"); `action = none` disables an action.
+- `restore` works while the window still sits where DockGrid put it; full-screen windows are left alone.
+- If Rectangle itself (or another window manager with the same shortcuts) is running, both will fire — keep one.
+
 ## Building from source
 
 Requires Xcode Command Line Tools (`swiftc`, `iconutil`) and macOS 14+.
@@ -77,15 +101,17 @@ To leave everything untouched: `DOCKGRID_KEEP_SPOTLIGHT=1 ./build.sh`.
 
 ## Hotkeys
 
-The app registers its global shortcuts itself (Carbon `RegisterEventHotKey`): no third-party tools and no Accessibility permission are needed.
-They are configured in `~/.config/apps-folder/hotkeys.txt`, which is created on first launch:
+The app registers its global shortcuts itself (Carbon `RegisterEventHotKey`): no third-party tools are needed, and the Accessibility permission is required only for window management and Option+Enter pasting.
+They are configured in `~/.config/apps-folder/hotkeys.txt`, which is created on first launch; actions it does not list yet (for example after an update) are appended to the end:
 
 ```
 apps = alt+a
 clipboard = cmd+space
+left-half = ctrl+alt+left
+…
 ```
 
-Modifiers: `cmd`, `alt`, `ctrl`, `shift`; keys: letters, digits, `space`, `tab`, `return`, `f1`–`f12`. Changes take effect after the app is restarted.
+Modifiers: `cmd`, `alt`, `ctrl`, `shift`; keys: letters, digits, `space`, `tab`, `return`, `delete`, arrows `left`/`right`/`up`/`down`, `=`, `-`, `[`, `]`, `,`, `.`, `/`, `f1`–`f12`. The value `none` leaves an action without a shortcut. Changes take effect after the app is restarted.
 Hotkeys work only while the process is running (see "Launch at login"). For scripts there is a URL scheme: `open apps-launcher://toggle` and `open apps-launcher://clipboard`.
 
 ## Launch at login
@@ -112,7 +138,7 @@ Examples are in `examples/`. The list is built from `/Applications`, `~/Applicat
 
 ## How it works
 
-- `main.swift` — the panel window, modes and switching; `Launcher.swift` — the app grid; `Clipboard.swift` — clipboard history (polls `NSPasteboard.changeCount` every 0.5 s); `Highlight.swift` — code detection and highlighting; `QRCode.swift` — reading QR codes from images; `Hotkeys.swift` — global hotkeys.
+- `main.swift` — the panel window, modes and switching; `Launcher.swift` — the app grid; `Clipboard.swift` — clipboard history (polls `NSPasteboard.changeCount` every 0.5 s); `Highlight.swift` — code detection and highlighting; `QRCode.swift` — reading QR codes from images; `Hotkeys.swift` — global hotkeys; `Windows.swift` — window management through the Accessibility API.
 - The window is an `NSPanel` with the `nonactivatingPanel` style: it receives the keyboard without waiting for the app to be activated.
 - A Dock click arrives as a reopen event, a hotkey as a Carbon event; both lead to the same `toggle()`.
 - `tools/winvis.swift` — checks whether the window is visible on screen (for tests from the terminal).

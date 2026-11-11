@@ -8,7 +8,7 @@ APP="${DOCKGRID_APP:-$HOME/Applications/Apps.app}"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" build/AppIcon.iconset
 slices=()
 for arch in ${=DOCKGRID_ARCHS:-arm64}; do
-  swiftc -O -target $arch-apple-macos14 main.swift Launcher.swift Clipboard.swift Hotkeys.swift Highlight.swift QRCode.swift -o build/Apps-$arch
+  swiftc -O -target $arch-apple-macos14 main.swift Launcher.swift Clipboard.swift Hotkeys.swift Windows.swift Highlight.swift QRCode.swift -o build/Apps-$arch
   slices+=(build/Apps-$arch)
 done
 lipo -create $slices -output "$APP/Contents/MacOS/Apps"

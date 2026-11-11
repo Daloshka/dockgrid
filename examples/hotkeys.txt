@@ -1,2 +1,25 @@
 apps = alt+a
 clipboard = cmd+space
+# Управление окнами (как в Rectangle); отключить действие: = none
+left-half = ctrl+alt+left
+right-half = ctrl+alt+right
+top-half = ctrl+alt+up
+bottom-half = ctrl+alt+down
+top-left = ctrl+alt+u
+top-right = ctrl+alt+i
+bottom-left = ctrl+alt+j
+bottom-right = ctrl+alt+k
+first-third = ctrl+alt+d
+center-third = ctrl+alt+f
+last-third = ctrl+alt+g
+first-two-thirds = ctrl+alt+e
+last-two-thirds = ctrl+alt+t
+maximize = ctrl+alt+return
+almost-maximize = none
+maximize-height = ctrl+alt+shift+up
+center = ctrl+alt+c
+larger = ctrl+alt+=
+smaller = ctrl+alt+-
+restore = ctrl+alt+delete
+next-display = ctrl+alt+cmd+right
+prev-display = ctrl+alt+cmd+left
