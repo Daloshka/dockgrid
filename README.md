@@ -1,114 +1,118 @@
 # DockGrid
 
-Лёгкий лаунчер приложений и история буфера обмена для macOS — замена Launchpad / системной иконки «Apps» и менеджера буфера для тех, у кого выключен Spotlight.
-Не использует индекс Spotlight: список приложений читается с диска при каждом открытии.
+**English** · [Русский](README.ru.md)
 
-![Сетка приложений, поиск и история буфера обмена](docs/demo.gif)
+A lightweight app launcher and clipboard history for macOS — a replacement for Launchpad / the system "Apps" icon and for a clipboard manager, made for people who keep Spotlight turned off.
+It does not use the Spotlight index: the app list is read from disk every time the window opens.
 
-| Сетка приложений | История буфера обмена |
+> The app interface and the installer messages are currently in Russian.
+
+![App grid, search and clipboard history](docs/demo.gif)
+
+| App grid | Clipboard history |
 | --- | --- |
-| ![Сетка приложений](docs/launcher.png) | ![История буфера обмена](docs/clipboard.png) |
+| ![App grid](docs/launcher.png) | ![Clipboard history](docs/clipboard.png) |
 
-## Установка
+## Install
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/Daloshka/dockgrid/main/install.sh | sh
 ```
 
-Нужна macOS 14 или новее (Apple Silicon или Intel); Xcode не требуется. Скрипт скачивает готовое приложение из последнего релиза в `~/Applications/Apps.app`, включает автозапуск и сразу запускает: Option+A — сетка приложений, Cmd+Space — история буфера.
-Заодно он отключает системное сочетание Spotlight (Cmd+Space) и завершает Maccy, если тот запущен; чтобы этого не делать — `curl -fsSL … | DOCKGRID_KEEP_SPOTLIGHT=1 sh`.
+Requires macOS 14 or later (Apple Silicon or Intel); Xcode is not needed. The script downloads the prebuilt app from the latest release into `~/Applications/Apps.app`, enables launch at login and starts it right away: Option+A opens the app grid, Cmd+Space opens the clipboard history.
+It also disables the system Spotlight shortcut (Cmd+Space) and quits Maccy if it is running; to skip that, run `curl -fsSL … | DOCKGRID_KEEP_SPOTLIGHT=1 sh`.
 
-Удаление:
+Uninstall:
 
 ```sh
 launchctl bootout gui/$(id -u)/local.dockgrid
 rm -rf ~/Applications/Apps.app ~/Library/LaunchAgents/local.dockgrid.plist
 ```
 
-## Возможности
+## Features
 
-- Сетка приложений с поиском по названию; стрелки ходят по сетке, Enter запускает, Esc закрывает.
-- Закреплённые приложения отдельным блоком сверху.
-- Правый клик по приложению: «Закрепить сверху / Открепить», «Показать в Finder», «Скрыть из списка».
-- Открытие кликом по иконке в Dock или хоткеем (Option+A); повторное действие скрывает окно.
-- Процесс живёт постоянно, окно прячется; пока оно скрыто, интерфейс выгружен и процессор почти не используется.
+- App grid with search by name; arrow keys move around the grid, Enter launches, Esc closes.
+- Pinned apps in a separate block at the top.
+- Right-click an app: pin / unpin, show in Finder, hide from the list.
+- Opens by clicking the Dock icon or with a hotkey (Option+A); doing it again hides the window.
+- The process stays alive and the window is hidden; while hidden, the interface is unloaded and CPU use is close to zero.
 
-## История буфера обмена
+## Clipboard history
 
-- Запоминает скопированный текст, файлы и изображения (до 200 записей, закреплённые не вытесняются); повтор поднимает запись наверх.
-- Открывается хоткеем (Cmd+Space в примере): список с поиском слева, предпросмотр и сведения о записи справа.
-- Текст, похожий на код (в том числе JSON и SQL), в предпросмотре подсвечивается: ключевые слова, строки, комментарии, числа, типы и вызовы; длинные строки не переносятся, а прокручиваются вбок.
-- Если на скопированной картинке есть QR-код, под предпросмотром показывается его содержимое: ссылку http(s) можно открыть кликом, любой текст — скопировать.
-- Enter или клик — скопировать запись обратно в буфер; Option+Enter — скопировать и вставить (нужно разрешение Accessibility для `Apps.app`, после пересборки его выдают заново).
-- Cmd+1…9 — быстрый выбор, Cmd+Backspace — удалить, правый клик — закрепить, удалить, показать файл в Finder.
-- Записи, помеченные менеджерами паролей как скрытые (`org.nspasteboard.ConcealedType` и подобные, а также собственные типы 1Password, KeeWeb, TypeIt4Me), в историю не попадают.
-- Хранилище: `~/Library/Application Support/DockGrid/clipboard` (`index.json`, `images/*.png`, большие тексты — `texts/*.txt`), без шифрования, доступ только владельцу.
-- У больших текстов предпросмотр и поиск работают по первым 20 000 символов; копируется текст целиком.
+- Remembers copied text, files and images (up to 200 entries, pinned ones are never evicted); copying the same thing again moves the entry to the top.
+- Opens with a hotkey (Cmd+Space by default): a searchable list on the left, a preview and entry details on the right.
+- Text that looks like code (including JSON and SQL) is syntax-highlighted in the preview: keywords, strings, comments, numbers, types and calls; long lines scroll sideways instead of wrapping.
+- If a copied image contains a QR code, its content is shown under the preview: an http(s) link opens on click, any text can be copied.
+- Enter or click copies the entry back to the clipboard; Option+Enter copies and pastes (needs the Accessibility permission for `Apps.app`; it has to be granted again after a rebuild).
+- Cmd+1…9 — quick select, Cmd+Backspace — delete, right-click — pin, delete, show the file in Finder.
+- Entries that password managers mark as concealed (`org.nspasteboard.ConcealedType` and similar, plus the custom types of 1Password, KeeWeb and TypeIt4Me) are not stored.
+- Storage: `~/Library/Application Support/DockGrid/clipboard` (`index.json`, `images/*.png`, large texts in `texts/*.txt`), unencrypted, readable by the owner only.
+- For large texts the preview and search cover the first 20,000 characters; the full text is copied.
 
-### Известные ограничения
+### Known limitations
 
-- Ввод через IME (японский, китайский, корейский): Enter и стрелки в окне всегда выбирают запись, поэтому подтверждение набора в поле поиска не работает.
-- Вставка по Option+Enter посылает клавишу V по её положению на QWERTY; на раскладках вроде Dvorak вставка не сработает.
+- IME input (Japanese, Chinese, Korean): Enter and the arrow keys always act on the list, so confirming a composition in the search field does not work.
+- Option+Enter pastes by sending the V key at its QWERTY position; on layouts such as Dvorak the paste will not work.
 
-## Сборка из исходников
+## Building from source
 
-Нужны Xcode Command Line Tools (`swiftc`, `iconutil`), macOS 14+.
+Requires Xcode Command Line Tools (`swiftc`, `iconutil`) and macOS 14+.
 
 ```sh
 ./build.sh
 ```
 
-Релизный архив для `install.sh` собирает `./release.sh` (универсальный `build/DockGrid.zip`).
+The release archive used by `install.sh` is built with `./release.sh` (a universal `build/DockGrid.zip`).
 
-Скрипт `build.sh` собирает `~/Applications/Apps.app`, рисует иконку (`icon.swift`), подписывает ad-hoc и регистрирует схему `apps-launcher://`.
-После сборки перетащите `Apps.app` в Dock.
+`build.sh` builds `~/Applications/Apps.app`, draws the icon (`icon.swift`), signs the app ad hoc and registers the `apps-launcher://` URL scheme.
+After the build, drag `Apps.app` to the Dock.
 
-Заодно скрипт убирает то, что мешает хоткеям:
+The script also removes what gets in the way of the hotkeys:
 
-- отключает системное сочетание Spotlight (Cmd+Space) — вернуть можно в «Системные настройки → Клавиатура → Сочетания клавиш → Spotlight»;
-- завершает Maccy, если он запущен (автозапуск Maccy отключается в его собственных настройках);
-- `./build.sh --disable-indexing` дополнительно выключает индексацию Spotlight (`sudo mdutil -a -i off`; без индекса не работает поиск в Finder и Почте, вернуть — `sudo mdutil -a -i on`).
+- disables the system Spotlight shortcut (Cmd+Space) — re-enable it in System Settings → Keyboard → Keyboard Shortcuts → Spotlight;
+- quits Maccy if it is running (Maccy's launch at login is turned off in its own settings);
+- `./build.sh --disable-indexing` additionally turns off Spotlight indexing (`sudo mdutil -a -i off`; without the index, search in Finder and Mail stops working; revert with `sudo mdutil -a -i on`).
 
-Ничего не отключать: `DOCKGRID_KEEP_SPOTLIGHT=1 ./build.sh`.
+To leave everything untouched: `DOCKGRID_KEEP_SPOTLIGHT=1 ./build.sh`.
 
-## Хоткеи
+## Hotkeys
 
-Глобальные сочетания приложение регистрирует само (Carbon `RegisterEventHotKey`): сторонние программы и разрешение Accessibility не нужны.
-Настройка — `~/.config/apps-folder/hotkeys.txt`, файл создаётся при первом запуске:
+The app registers its global shortcuts itself (Carbon `RegisterEventHotKey`): no third-party tools and no Accessibility permission are needed.
+They are configured in `~/.config/apps-folder/hotkeys.txt`, which is created on first launch:
 
 ```
 apps = alt+a
 clipboard = cmd+space
 ```
 
-Модификаторы: `cmd`, `alt`, `ctrl`, `shift`; клавиши: буквы, цифры, `space`, `tab`, `return`, `f1`–`f12`. Изменения применяются после перезапуска приложения.
-Хоткеи работают, только пока процесс запущен (см. «Автозапуск»). Для скриптов оставлена схема `open apps-launcher://toggle` и `open apps-launcher://clipboard`.
+Modifiers: `cmd`, `alt`, `ctrl`, `shift`; keys: letters, digits, `space`, `tab`, `return`, `f1`–`f12`. Changes take effect after the app is restarted.
+Hotkeys work only while the process is running (see "Launch at login"). For scripts there is a URL scheme: `open apps-launcher://toggle` and `open apps-launcher://clipboard`.
 
-## Автозапуск
+## Launch at login
 
-История буфера пишется и хоткеи работают, только пока процесс запущен. Чтобы он стартовал при входе скрытым:
+The clipboard history is recorded and the hotkeys work only while the process is running. `install.sh` sets this up for you; after a manual build, make it start hidden at login with:
 
 ```sh
 cp examples/local.dockgrid.plist ~/Library/LaunchAgents/
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/local.dockgrid.plist
 ```
 
-## Настройки
+## Settings
 
-Файлы в `~/.config/apps-folder/`, по одному названию приложения в строке, без `.app`:
+Files in `~/.config/apps-folder/`, one app name per line, without `.app`:
 
-| Файл | Назначение |
+| File | Purpose |
 | --- | --- |
-| `pinned.txt` | закреплённые сверху, в порядке строк |
-| `system.txt` | какие приложения из `/System/Applications` показывать (остальные системные скрыты) |
-| `hidden.txt` | какие сторонние приложения скрыть |
-| `hotkeys.txt` | глобальные сочетания клавиш |
+| `pinned.txt` | apps pinned to the top, in line order |
+| `system.txt` | which apps from `/System/Applications` to show (other system apps are hidden) |
+| `hidden.txt` | which third-party apps to hide |
+| `hotkeys.txt` | global keyboard shortcuts |
 
-Примеры — в `examples/`. Источники списка: `/Applications`, `~/Applications` (с подпапками первого уровня), `/System/Applications` и `Utilities`.
+Examples are in `examples/`. The list is built from `/Applications`, `~/Applications` (including first-level subfolders), `/System/Applications` and `Utilities`.
 
-## Устройство
+## How it works
 
-- `main.swift` — окно-панель, режимы и переключение; `Launcher.swift` — сетка приложений; `Clipboard.swift` — история буфера (опрос `NSPasteboard.changeCount` раз в 0,5 с); `Highlight.swift` — распознавание и подсветка кода; `QRCode.swift` — чтение QR-кодов с картинок; `Hotkeys.swift` — глобальные хоткеи.
-- Окно — `NSPanel` со стилем `nonactivatingPanel`: получает клавиатуру, не дожидаясь активации приложения.
-- Клик в Dock приходит как событие reopen, хоткей — как событие Carbon; оба ведут в один `toggle()`.
-- `tools/winvis.swift` — проверка, видно ли окно на экране (для тестов из терминала).
+- `main.swift` — the panel window, modes and switching; `Launcher.swift` — the app grid; `Clipboard.swift` — clipboard history (polls `NSPasteboard.changeCount` every 0.5 s); `Highlight.swift` — code detection and highlighting; `QRCode.swift` — reading QR codes from images; `Hotkeys.swift` — global hotkeys.
+- The window is an `NSPanel` with the `nonactivatingPanel` style: it receives the keyboard without waiting for the app to be activated.
+- A Dock click arrives as a reopen event, a hotkey as a Carbon event; both lead to the same `toggle()`.
+- `tools/winvis.swift` — checks whether the window is visible on screen (for tests from the terminal).
