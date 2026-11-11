@@ -185,6 +185,11 @@ struct LauncherView: View {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                 TextField("Поиск приложения", text: $model.query)
                     .textFieldStyle(.plain).font(.system(size: 18)).focused($focused)
+                Button { model.onClose?(false); Settings.show() } label: {
+                    Image(systemName: "gearshape").font(.system(size: 15)).foregroundStyle(.secondary)
+                        .frame(width: 26, height: 26).contentShape(Rectangle())
+                }
+                .buttonStyle(.plain).focusable(false).help("Сочетания клавиш (Cmd+,)")
             }
             .padding(.horizontal, 22).padding(.vertical, 14)
             Divider()

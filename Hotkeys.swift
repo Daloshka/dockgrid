@@ -3,6 +3,7 @@
 //   apps = alt+a
 //   clipboard = cmd+space
 //   left-half = ctrl+alt+left      (управление окнами, см. Windows.swift)
+// Файл можно править руками или через окно настроек (Settings.swift).
 import AppKit
 import Carbon.HIToolbox
 
@@ -10,6 +11,7 @@ enum HotKeys {
     private static var actions: [UInt32: () -> Void] = [:]
     private static var refs: [EventHotKeyRef] = []
     private static var installed = false
+    private static var handler: (Mode) -> Void = { _ in }
 
     private static let keyCodes: [String: UInt32] = [
         "a": 0, "s": 1, "d": 2, "f": 3, "h": 4, "g": 5, "z": 6, "x": 7, "c": 8, "v": 9, "b": 11, "q": 12,
@@ -45,6 +47,61 @@ enum HotKeys {
     /// Дописывает в hotkeys.txt действия, которых там ещё нет (новый файл или обновление версии),
     /// и регистрирует сочетания. Отключить действие — написать `действие = none`.
     static func setUp(_ handler: @escaping (Mode) -> Void) {
+        self.handler = handler
+        reload()
+    }
+
+    /// Снимает все сочетания (пока окно настроек записывает новое).
+    static func suspend() {
+        for ref in refs { UnregisterEventHotKey(ref) }
+        refs = []
+        actions = [:]
+    }
+
+    /// Название клавиши для hotkeys.txt по коду; nil — клавиша не поддерживается.
+    static func keyName(_ code: UInt16) -> String? {
+        keyCodes.filter { $0.value == UInt32(code) }.map(\.key)
+            .first { !["enter", "backspace", "equal", "minus"].contains($0) }
+    }
+
+    private static func pairs(_ lines: [String]) -> [(Int, String, String)] {
+        lines.enumerated().compactMap { i, line in
+            let t = line.trimmingCharacters(in: .whitespaces)
+            let pair = t.split(separator: "=", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
+            return t.hasPrefix("#") || pair.count != 2 ? nil : (i, pair[0].lowercased(), pair[1].lowercased())
+        }
+    }
+
+    /// Действие → назначенное сочетание (только разобранные; `none` сюда не попадает).
+    static func current() -> [String: String] {
+        var out: [String: String] = [:]
+        for (_, name, combo) in pairs(Conf.read("hotkeys.txt")) where parse(combo) != nil { out[name] = combo }
+        return out
+    }
+
+    /// Записывает сочетание действия в hotkeys.txt (nil — снять), сохраняя остальные строки и комментарии.
+    /// Если сочетание уже занято другим действием, у того оно снимается.
+    static func set(_ action: String, _ combo: String?) {
+        let url = Conf.dir.appendingPathComponent("hotkeys.txt")
+        var lines = ((try? String(contentsOf: url, encoding: .utf8)) ?? "")
+            .split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        while lines.last?.isEmpty == true { lines.removeLast() }
+        let target = combo.flatMap(parse)
+        var found = false
+        for (i, name, old) in pairs(lines) {
+            if name == action {
+                lines[i] = "\(action) = \(combo ?? "none")"
+                found = true
+            } else if let target, let other = parse(old), other == target {
+                lines[i] = "\(name) = none"
+            }
+        }
+        if !found { lines.append("\(action) = \(combo ?? "none")") }
+        Conf.write("hotkeys.txt", lines)
+        reload()
+    }
+
+    static func reload() {
         let known = Set(Conf.read("hotkeys.txt").compactMap {
             $0.split(separator: "=", maxSplits: 1).first?.trimmingCharacters(in: .whitespaces).lowercased()
         })
@@ -69,9 +126,7 @@ enum HotKeys {
                 return noErr
             }, 1, &spec, nil, nil)
         }
-        for ref in refs { UnregisterEventHotKey(ref) }
-        refs = []
-        actions = [:]
+        suspend()
         var nextID: UInt32 = 1
         for line in Conf.read("hotkeys.txt") {
             let pair = line.split(separator: "=", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }

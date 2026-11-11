@@ -14,6 +14,34 @@ enum WindowAction: String, CaseIterable {
     case center, larger, smaller, restore
     case nextDisplay = "next-display", prevDisplay = "prev-display"
 
+    /// Название в окне настроек.
+    var title: String {
+        switch self {
+        case .leftHalf: "Левая половина"
+        case .rightHalf: "Правая половина"
+        case .topHalf: "Верхняя половина"
+        case .bottomHalf: "Нижняя половина"
+        case .topLeft: "Левый верхний угол"
+        case .topRight: "Правый верхний угол"
+        case .bottomLeft: "Левый нижний угол"
+        case .bottomRight: "Правый нижний угол"
+        case .firstThird: "Первая треть"
+        case .centerThird: "Центральная треть"
+        case .lastThird: "Последняя треть"
+        case .firstTwoThirds: "Первые две трети"
+        case .lastTwoThirds: "Последние две трети"
+        case .maximize: "Развернуть"
+        case .almostMaximize: "Почти развернуть"
+        case .maximizeHeight: "На всю высоту"
+        case .center: "По центру"
+        case .larger: "Увеличить"
+        case .smaller: "Уменьшить"
+        case .restore: "Вернуть как было"
+        case .nextDisplay: "Следующий монитор"
+        case .prevDisplay: "Предыдущий монитор"
+        }
+    }
+
     /// Сочетания по умолчанию — как в Rectangle.
     var defaultKey: String {
         switch self {
@@ -99,7 +127,7 @@ enum WindowManager {
     }
 
     /// Целевая рамка в координатах AX (начало — левый верхний угол главного экрана, y растёт вниз).
-    private static func rect(_ action: WindowAction, step: Int, current c: CGRect, screen s: CGRect) -> CGRect {
+    static func rect(_ action: WindowAction, step: Int, current c: CGRect, screen s: CGRect) -> CGRect {
         func part(_ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ h: CGFloat) -> CGRect {
             CGRect(x: s.minX + s.width * x, y: s.minY + s.height * y, width: s.width * w, height: s.height * h)
         }

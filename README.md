@@ -20,7 +20,8 @@ curl -fsSL https://raw.githubusercontent.com/Daloshka/dockgrid/main/install.sh |
 ```
 
 Requires macOS 14 or later (Apple Silicon or Intel); Xcode is not needed. The script downloads the prebuilt app from the latest release into `~/Applications/Apps.app`, enables launch at login and starts it right away: Option+A opens the app grid, Cmd+Space opens the clipboard history.
-It also disables the system Spotlight shortcut (Cmd+Space) and quits Maccy if it is running; to skip that, run `curl -fsSL … | DOCKGRID_KEEP_SPOTLIGHT=1 sh`.
+To update, run the same command again: it installs the latest release over the old one, keeping your settings and clipboard history.
+The script also disables the system Spotlight shortcut (Cmd+Space) and quits Maccy and Rectangle if they are running (their shortcuts clash with DockGrid); to skip that, run `curl -fsSL … | DOCKGRID_KEEP_SPOTLIGHT=1 sh`.
 
 Uninstall:
 
@@ -74,9 +75,9 @@ Hotkeys tile the focused window of any app — modelled on [Rectangle](https://g
 | `next-display`, `prev-display` | Ctrl+Option+Cmd+→ / ← | move to the adjacent display, keeping proportions |
 
 - Needs the Accessibility permission for `Apps.app` (System Settings → Privacy & Security → Accessibility): the prompt appears on the first shortcut press; it has to be granted again after a rebuild.
-- Shortcuts are changed in `hotkeys.txt` (see "Hotkeys"); `action = none` disables an action.
+- Shortcuts are changed in the settings window or in `hotkeys.txt` (see "Hotkeys"); `action = none` disables an action.
 - `restore` works while the window still sits where DockGrid put it; full-screen windows are left alone.
-- If Rectangle itself (or another window manager with the same shortcuts) is running, both will fire — keep one.
+- Rectangle is quit during installation so shortcuts do not fire twice; turn off any other window manager with the same shortcuts yourself.
 
 ## Building from source
 
@@ -95,6 +96,7 @@ The script also removes what gets in the way of the hotkeys:
 
 - disables the system Spotlight shortcut (Cmd+Space) — re-enable it in System Settings → Keyboard → Keyboard Shortcuts → Spotlight;
 - quits Maccy if it is running (Maccy's launch at login is turned off in its own settings);
+- quits Rectangle and turns off its launch-at-login setting — otherwise both would react to the same shortcut;
 - `./build.sh --disable-indexing` additionally turns off Spotlight indexing (`sudo mdutil -a -i off`; without the index, search in Finder and Mail stops working; revert with `sudo mdutil -a -i on`).
 
 To leave everything untouched: `DOCKGRID_KEEP_SPOTLIGHT=1 ./build.sh`.
@@ -102,7 +104,9 @@ To leave everything untouched: `DOCKGRID_KEEP_SPOTLIGHT=1 ./build.sh`.
 ## Hotkeys
 
 The app registers its global shortcuts itself (Carbon `RegisterEventHotKey`): no third-party tools are needed, and the Accessibility permission is required only for window management and Option+Enter pasting.
-They are configured in `~/.config/apps-folder/hotkeys.txt`, which is created on first launch; actions it does not list yet (for example after an update) are appended to the end:
+The easiest way to change them is the shortcuts window: the gear button in the app grid, Cmd+, in the open panel, or `open apps-launcher://settings`. Clicking a field records a new shortcut (Esc cancels), × clears it; a shortcut already used by another action is removed from that action. Changes apply immediately.
+
+The window edits `~/.config/apps-folder/hotkeys.txt`, which is created on first launch; actions it does not list yet (for example after an update) are appended to the end:
 
 ```
 apps = alt+a
@@ -111,7 +115,7 @@ left-half = ctrl+alt+left
 …
 ```
 
-Modifiers: `cmd`, `alt`, `ctrl`, `shift`; keys: letters, digits, `space`, `tab`, `return`, `delete`, arrows `left`/`right`/`up`/`down`, `=`, `-`, `[`, `]`, `,`, `.`, `/`, `f1`–`f12`. The value `none` leaves an action without a shortcut. Changes take effect after the app is restarted.
+Modifiers: `cmd`, `alt`, `ctrl`, `shift`; keys: letters, digits, `space`, `tab`, `return`, `delete`, arrows `left`/`right`/`up`/`down`, `=`, `-`, `[`, `]`, `,`, `.`, `/`, `f1`–`f12`. The value `none` leaves an action without a shortcut. Manual edits to the file take effect after the app is restarted.
 Hotkeys work only while the process is running (see "Launch at login"). For scripts there is a URL scheme: `open apps-launcher://toggle` and `open apps-launcher://clipboard`.
 
 ## Launch at login
@@ -138,7 +142,7 @@ Examples are in `examples/`. The list is built from `/Applications`, `~/Applicat
 
 ## How it works
 
-- `main.swift` — the panel window, modes and switching; `Launcher.swift` — the app grid; `Clipboard.swift` — clipboard history (polls `NSPasteboard.changeCount` every 0.5 s); `Highlight.swift` — code detection and highlighting; `QRCode.swift` — reading QR codes from images; `Hotkeys.swift` — global hotkeys; `Windows.swift` — window management through the Accessibility API.
+- `main.swift` — the panel window, modes and switching; `Launcher.swift` — the app grid; `Clipboard.swift` — clipboard history (polls `NSPasteboard.changeCount` every 0.5 s); `Highlight.swift` — code detection and highlighting; `QRCode.swift` — reading QR codes from images; `Hotkeys.swift` — global hotkeys; `Windows.swift` — window management through the Accessibility API; `Settings.swift` — the shortcuts window.
 - The window is an `NSPanel` with the `nonactivatingPanel` style: it receives the keyboard without waiting for the app to be activated.
 - A Dock click arrives as a reopen event, a hotkey as a Carbon event; both lead to the same `toggle()`.
 - `tools/winvis.swift` — checks whether the window is visible on screen (for tests from the terminal).

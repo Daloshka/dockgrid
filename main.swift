@@ -3,6 +3,7 @@
 //   клик в Dock, хоткей apps (Option+A)        — сетка приложений
 //   хоткей clipboard (Cmd+Space)                — история буфера обмена
 //   хоткеи окон (Ctrl+Option+стрелки и др.)     — раскладка окон, см. Windows.swift
+//   шестерёнка в сетке, Cmd+, в панели          — окно сочетаний клавиш, см. Settings.swift
 // Хоткеи глобальные, см. Hotkeys.swift; схема apps-launcher:// оставлена для скриптов.
 import AppKit
 import SwiftUI
@@ -54,6 +55,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         guard visible else { return e }
         if e.keyCode == 53 { hide(restoreFocus: true); return nil }
         let cmd = e.modifierFlags.contains(.command), opt = e.modifierFlags.contains(.option)
+        if cmd, e.keyCode == 43 { hide(restoreFocus: false); Settings.show(); return nil }
         switch mode {
         case .apps:
             guard let m = launcher else { return e }
@@ -115,7 +117,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         window.contentView = nil
         launcher = nil
         clip = nil
-        if restoreFocus { NSApp.hide(nil) }
+        // NSApp.hide спрятал бы и открытое окно настроек.
+        if restoreFocus && !Settings.isOpen { NSApp.hide(nil) }
     }
 
     // Каждый сигнал — ровно одно переключение. Если этот же клик уже спрятал окно потерей
@@ -126,7 +129,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         lastAutoHide = .distantPast
         if !wasVisible { show(target) }
         else if visible { hide(restoreFocus: true) }
-        else { NSApp.hide(nil) }
+        else if !Settings.isOpen { NSApp.hide(nil) }
     }
 
     func windowDidResignKey(_ note: Notification) {
@@ -150,6 +153,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     // Вызов из скриптов (open apps-launcher://…). Сигналы чаще 0,5 с пропускаем.
     func application(_ application: NSApplication, open urls: [URL]) {
+        if urls.first?.host == "settings" { Settings.show(); return }
         let target: Mode = urls.first?.host == "clipboard" ? .clipboard : .apps
         let gap = Date().timeIntervalSince(lastHotkey[target] ?? .distantPast)
         lastHotkey[target] = Date()

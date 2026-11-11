@@ -5,10 +5,12 @@ cd "${0:A:h}"
 # DOCKGRID_APP — куда собирать, DOCKGRID_ARCHS — архитектуры (для релиза: "arm64 x86_64"),
 # DOCKGRID_PACKAGE=1 — только собрать, ничего не регистрировать и не отключать (см. release.sh).
 APP="${DOCKGRID_APP:-$HOME/Applications/Apps.app}"
+# Версия приложения; release.sh выпускает релиз с тегом v$VERSION.
+VERSION="${DOCKGRID_VERSION:-1.1.0}"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" build/AppIcon.iconset
 slices=()
 for arch in ${=DOCKGRID_ARCHS:-arm64}; do
-  swiftc -O -target $arch-apple-macos14 main.swift Launcher.swift Clipboard.swift Hotkeys.swift Windows.swift Highlight.swift QRCode.swift -o build/Apps-$arch
+  swiftc -O -target $arch-apple-macos14 main.swift Launcher.swift Clipboard.swift Hotkeys.swift Windows.swift Settings.swift Highlight.swift QRCode.swift -o build/Apps-$arch
   slices+=(build/Apps-$arch)
 done
 lipo -create $slices -output "$APP/Contents/MacOS/Apps"
@@ -23,7 +25,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>CFBundleExecutable</key><string>Apps</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>1.0</string>
+  <key>CFBundleShortVersionString</key><string>$VERSION</string>
   <key>LSMinimumSystemVersion</key><string>14.0</string>
   <key>LSUIElement</key><true/>
   <key>CFBundleURLTypes</key><array><dict>
@@ -55,5 +57,13 @@ if [[ -z "$DOCKGRID_KEEP_SPOTLIGHT" ]]; then
   # Maccy ведёт свою историю буфера и занимает хоткей — завершаем, если запущен.
   if pgrep -xq Maccy; then
     pkill -x Maccy && echo "Maccy: завершён. Автозапуск отключите в его настройках (Launch at login), иначе он вернётся после входа."
+  fi
+  # Rectangle вешает те же сочетания на окна — сработали бы оба.
+  if pgrep -xq Rectangle; then
+    pkill -x Rectangle && echo "Rectangle: завершён, окнами теперь управляет DockGrid."
+  fi
+  if defaults read com.knollsoft.Rectangle >/dev/null 2>&1; then
+    defaults write com.knollsoft.Rectangle launchOnLogin -bool false
+    echo "Rectangle: если вернётся после входа, уберите его в Системные настройки → Основные → Объекты входа."
   fi
 fi
