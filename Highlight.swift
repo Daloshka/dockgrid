@@ -38,16 +38,27 @@ enum Code {
         var lines = 0, starters = 0, structural = 0
         for raw in trimmed.split(separator: "\n", omittingEmptySubsequences: true).prefix(200) {
             let line = raw.trimmingCharacters(in: .whitespaces)
-            guard !line.isEmpty else { continue }
+            // Комментарии не считаем: они не говорят ни за код, ни против.
+            guard !line.isEmpty, !line.hasPrefix("# "), !line.hasPrefix("//") else { continue }
             lines += 1
             let head = line.prefix { !$0.isWhitespace && $0 != "(" && $0 != "{" && $0 != ":" }
             if lineStarters.contains(String(head)) || (line.hasPrefix("@") && head.count > 1) { starters += 1 }
             if let end = line.last, "{};".contains(end) { structural += 1 }
-            else if operators.contains(where: { line.contains($0) }) || hasCall(line) { structural += 1 }
+            else if operators.contains(where: { line.contains($0) }) || hasCall(line) || isAssignment(line) { structural += 1 }
         }
         guard structural >= 1 else { return false }
         if lines == 1 { return starters == 1 }
         return starters + structural >= 3 && (starters + structural) * 2 >= lines
+    }
+
+    /// Строка вида `name = value`: слева один идентификатор (допустимы точки и индексы).
+    private static func isAssignment(_ line: String) -> Bool {
+        guard let eq = line.firstIndex(of: "="), eq != line.startIndex else { return false }
+        let left = line[..<eq].trimmingCharacters(in: .whitespaces)
+        let rest = line[line.index(after: eq)...]
+        guard let first = left.first, first.isASCII, first.isLetter || first == "_",
+              !rest.isEmpty, rest.first != "=" else { return false }
+        return left.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || "_.[]".contains($0)) }
     }
 
     /// Есть ли вызов вида `name(` — скобка сразу после идентификатора.
